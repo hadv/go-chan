@@ -63,7 +63,7 @@ func (b *Block) Hash() common.Hash {
 // Size returns the approximate memory used by all internal contents. It is used
 // to approximate and limit the memory consumption of various caches.
 func (b *Block) Size() common.StorageSize {
-	return common.StorageSize(unsafe.Sizeof(*b)) + common.StorageSize((b.Difficulty.BitLen()+b.Number.BitLen())/8)
+	return common.StorageSize(unsafe.Sizeof(*b)) + common.StorageSize((b.Difficulty.BitLen()+b.Number.BitLen()+b.Time.BitLen())/8)
 }
 
 func rlpHash(x interface{}) (h common.Hash) {
