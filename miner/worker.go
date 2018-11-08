@@ -4,6 +4,7 @@ import (
 	crand "crypto/rand"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"math/rand"
@@ -63,6 +64,7 @@ func (w *Worker) remote() {
 	for {
 		select {
 		case result := <-w.workCh:
+			fmt.Println("Miner: received work submit from remote!!!")
 			if submitWork(result.nonce) {
 				result.errc <- nil
 			} else {
@@ -100,13 +102,13 @@ func (w *Worker) Seal(block *types.Block, results chan<- *types.Block, stop <-ch
 		threads = 0 // Allows disabling local mining without extra logic around local/remote
 	}
 	var (
-		pend   sync.WaitGroup
+		wg     sync.WaitGroup
 		locals = make(chan *types.Block)
 	)
 	for i := 0; i < threads; i++ {
-		pend.Add(1)
+		wg.Add(1)
 		go func(id int, nonce uint64) {
-			defer pend.Done()
+			defer wg.Done()
 			w.mine(block, nonce, abort, locals)
 		}(i, uint64(w.rand.Int63()))
 	}
@@ -133,7 +135,7 @@ func (w *Worker) Seal(block *types.Block, results chan<- *types.Block, stop <-ch
 			}
 		}
 		// Wait for all miners to terminate and return the block
-		pend.Wait()
+		wg.Wait()
 	}()
 	return nil
 }
@@ -178,7 +180,6 @@ search:
 
 // pow
 func pow(hash []byte, nonce uint64) []byte {
-	log.Info("hashimoto")
 	// Combine header+nonce into a 64 byte seed
 	seed := make([]byte, 40)
 	copy(seed, hash)
